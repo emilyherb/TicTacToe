@@ -26,10 +26,6 @@ button {
     width: 320px;
 }
 
-.row {
-    display: flex;
-}
-
 .cell {
     width: 100px;
     height: 100px;
@@ -49,4 +45,3 @@ button {
 .reset-btn {
     margin-top: 20px;
 }
-
