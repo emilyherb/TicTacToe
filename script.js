@@ -8,7 +8,7 @@ const Gameboard = (function() {
     resetBoard();
 
     const render = () => {
-        console.log(board.map(row => row.join("|")) .join("\n---------\n"));
+        console.log(board.map(row => row.join("|")).join("\n---------\n"));
     };
 
     const makeMove = (row, col, marker) => {
@@ -42,8 +42,11 @@ const Gameboard = (function() {
         return null;
     };
 
-    return { render, makeMove, checkWinner, board, resetBoard };
+    const getBoard = () => board; // Expose board via a getter
+
+    return { render, makeMove, checkWinner, getBoard, resetBoard };
 })();
+
 
 const Player = (name, marker) => {
     return { name, marker };
@@ -112,21 +115,24 @@ const DisplayController = (function() {
 
     const renderBoard = () => {
         boardElement.innerHTML = "";
-        Gameboard.board.forEach((row, rowIndex) => {
+        Gameboard.getBoard().forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellElement = document.createElement("button");
                 cellElement.classList.add("cell");
-                cellElement.textContent = Gameboard.board[rowIndex][colIndex]; 
+                cellElement.textContent = cell; // This should now correctly display X or O
                 
                 cellElement.addEventListener("click", () => {
-                    if (!GameController.gameOver && Gameboard.board[rowIndex][colIndex] === "") {
+                    if (!GameController.gameOver && Gameboard.getBoard()[rowIndex][colIndex] === "") {
                         GameController.makeMove(rowIndex, colIndex);
+                        renderBoard(); // Refresh the board
                     }
                 });
+    
                 boardElement.appendChild(cellElement);
             });
         });
     };
+    
 
     const showResult = (message) => {
         gameResultElement.textContent = message;
