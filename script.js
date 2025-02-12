@@ -1,12 +1,14 @@
 const Gameboard = (function() {
-    let board = [
-        ["", "", ""],
-        ["", "", ""],
-        ["", "", ""]
-    ];
+    let board;
+
+    const resetBoard = () => {
+        board = [["", "", ""], ["", "", ""], ["", "", ""]];
+    };
+
+    resetBoard();
 
     const render = () => {
-        console.log(board.map(row => row.join("|")).join("\n---------\n"));
+        console.log(board.map(row => row.join("|")) .join("\n---------\n"));
     };
 
     const makeMove = (row, col, marker) => {
@@ -19,17 +21,17 @@ const Gameboard = (function() {
 
     const checkWinner = () => {
         const lines = [
-            ...board, 
-            [board[0][0], board[1][0], board[2][0]], 
-            [board[0][1], board[1][1], board[2][1]], 
-            [board[0][2], board[1][2], board[2][2]], 
-            [board[0][0], board[1][1], board[2][2]], 
-            [board[0][2], board[1][1], board[2][0]]  
+            ...board,
+            [board[0][0], board[1][0], board[2][0]],
+            [board[0][1], board[1][1], board[2][1]],
+            [board[0][2], board[1][2], board[2][2]],
+            [board[0][0], board[1][1], board[2][2]],
+            [board[0][2], board[1][1], board[2][0]]
         ];
 
         for (let line of lines) {
             if (line[0] && line[0] === line[1] && line[1] === line[2]) {
-                return line[0]; 
+                return line[0];
             }
         }
 
@@ -37,10 +39,10 @@ const Gameboard = (function() {
             return "Tie";
         }
 
-        return null; 
+        return null;
     };
 
-    return { render, makeMove, checkWinner, board };
+    return { render, makeMove, checkWinner, board, resetBoard };
 })();
 
 const Player = (name, marker) => {
@@ -57,27 +59,26 @@ const GameController = (function() {
         player2 = Player(name2, "O");
         currentPlayer = player1;
         gameOver = false;
-
-        Gameboard.board = [
-            ["", "", ""],
-            ["", "", ""],
-            ["", "", ""]
-        ];
-
+        Gameboard.resetBoard();
         DisplayController.renderBoard();
         DisplayController.clearResult();
-        document.querySelector(".game-result").textContent = `${currentPlayer.name}'s turn`;
+        updateTurnDisplay();
     };
 
     const switchPlayer = () => {
-        currentPlayer = currentPlayer.marker === 'X' ? player2 : player1;
+        currentPlayer = currentPlayer === player1 ? player2 : player1;
+        updateTurnDisplay();
+    };
+
+    const updateTurnDisplay = () => {
+        document.querySelector(".game-result").textContent = `${currentPlayer.name}'s turn`;
     };
 
     const makeMove = (row, col) => {
         if (gameOver) return;
 
         if (Gameboard.makeMove(row, col, currentPlayer.marker)) {
-            DisplayController.renderBoard(); 
+            DisplayController.renderBoard();
             const winner = Gameboard.checkWinner();
             if (winner) {
                 gameOver = true;
@@ -88,12 +89,21 @@ const GameController = (function() {
                 }
             } else {
                 switchPlayer();
-                document.querySelector(".game-result").textContent = `${currentPlayer.name}'s turn`;
             }
         }
     };
 
-    return { startGame, makeMove };
+    const resetGame = () => {
+        gameOver = false;
+        Gameboard.resetBoard();
+        DisplayController.renderBoard();
+        DisplayController.clearResult();
+        document.querySelector(".player-names").style.display = "block";
+        document.querySelector("#player1-name").value = "";
+        document.querySelector("#player2-name").value = "";
+    };
+
+    return { startGame, makeMove, resetGame, get gameOver() { return gameOver; } };
 })();
 
 const DisplayController = (function() {
@@ -101,19 +111,18 @@ const DisplayController = (function() {
     const gameResultElement = document.querySelector(".game-result");
 
     const renderBoard = () => {
-        boardElement.innerHTML = "";  
+        boardElement.innerHTML = "";
         Gameboard.board.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
                 const cellElement = document.createElement("button");
                 cellElement.classList.add("cell");
-                cellElement.textContent = cell || "";  // Display "X" or "O" or empty
+                cellElement.textContent = Gameboard.board[rowIndex][colIndex]; 
                 
                 cellElement.addEventListener("click", () => {
-                    if (!gameOver && cell === "") {
+                    if (!GameController.gameOver && Gameboard.board[rowIndex][colIndex] === "") {
                         GameController.makeMove(rowIndex, colIndex);
                     }
                 });
-
                 boardElement.appendChild(cellElement);
             });
         });
@@ -128,10 +137,7 @@ const DisplayController = (function() {
     };
 
     document.querySelector(".reset-btn").addEventListener("click", () => {
-        document.querySelector(".player-names").style.display = "block";
-        document.querySelector(".start-btn").style.display = "block"; 
-        gameResultElement.textContent = "";
-        boardElement.innerHTML = "";
+        GameController.resetGame();
     });
 
     document.querySelector(".start-btn").addEventListener("click", () => {
@@ -143,13 +149,9 @@ const DisplayController = (function() {
             return;
         }
 
-        document.querySelector(".player-names").style.display = "none"; 
-        document.querySelector(".start-btn").style.display = "none"; 
-
+        document.querySelector(".player-names").style.display = "none";
         GameController.startGame(player1Name, player2Name);
     });
 
     return { renderBoard, showResult, clearResult };
 })();
-
-
